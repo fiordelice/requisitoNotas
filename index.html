@@ -34,9 +34,11 @@ form button:hover { background:#5a2edb; }
 }
 form input[type="date"] {
   display: block;
-  margin: 0 auto 12px auto; /* centraliza horizontalmente */
+  margin: 0 auto 12px auto; /* centraliza em qualquer largura */
   text-align: center;       /* centraliza o texto dentro do input */
+  max-width: 250px;         /* largura fixa mais elegante */
 }
+
 
 /* Lista de itens */
 .list { margin-top:15px; }
@@ -218,5 +220,6 @@ setInterval(carregarListas,60000);
 </script>
 </body>
 </html>
+
 
 
