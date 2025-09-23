@@ -27,11 +27,15 @@ form button:hover { background:#5a2edb; }
 }
 
 .actions button.concluir { 
-  background:#4CAF50; 
+  background:#45a049; 
   color:#fff; 
-  flex:1; 
-  height:40px; /* define altura fixa */
+  flex:0.7;        /* reduz a largura automática */
+  height:34px;     /* altura menor */
+  padding:6px 10px; /* menos espaço interno */
+  font-size:0.9em;  /* letra levemente menor */
+  border-radius:6px;
 }
+
 form input[type="date"] {
   display: block;
   margin: 0 auto 12px auto; /* centraliza em qualquer largura */
@@ -220,6 +224,7 @@ setInterval(carregarListas,60000);
 </script>
 </body>
 </html>
+
 
 
 
