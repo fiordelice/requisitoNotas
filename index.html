@@ -65,13 +65,15 @@
 </div>
 
 <script>
+const BACKEND_URL = "https://SEU_BACKEND.onrender.com"; // <-- Coloque aqui a URL do backend online
+
 const form = document.getElementById("reqForm");
 const lista = document.getElementById("lista");
 const listaConcluidas = document.getElementById("listaConcluidas");
 
 // Funções para o backend MySQL
 async function salvarBackend(data){
-  await fetch('http://localhost:3000/requisicoes', {
+  await fetch(`${BACKEND_URL}/requisicoes`, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(data)
@@ -79,27 +81,27 @@ async function salvarBackend(data){
 }
 
 async function buscarPendentes(){
-  const res = await fetch('http://localhost:3000/pendentes');
+  const res = await fetch(`${BACKEND_URL}/pendentes`);
   return await res.json();
 }
 
 async function buscarConcluidas(){
-  const res = await fetch('http://localhost:3000/concluidas');
+  const res = await fetch(`${BACKEND_URL}/concluidas`);
   return await res.json();
 }
 
 async function concluirBackend(id){
-  await fetch('http://localhost:3000/concluir/'+id, { method:'POST' });
+  await fetch(`${BACKEND_URL}/concluir/${id}`, { method:'POST' });
   carregarListas();
 }
 
 async function excluirBackend(id){
-  await fetch('http://localhost:3000/requisicoes/'+id, { method:'DELETE' });
+  await fetch(`${BACKEND_URL}/requisicoes/${id}`, { method:'DELETE' });
   carregarListas();
 }
 
 async function excluirConcluidaBackend(id){
-  await fetch('http://localhost:3000/concluidas/'+id, { method:'DELETE' });
+  await fetch(`${BACKEND_URL}/concluidas/${id}`, { method:'DELETE' });
   carregarListas();
 }
 
