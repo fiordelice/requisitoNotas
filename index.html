@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Requisições de Notas</title>
+<style>
+  /* Seu CSS permanece igual */
+  *, *::before, *::after { box-sizing: border-box; }
+  body, html { margin:0; padding:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f0f2f5; }
+  .wrap { display:flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; padding:30px; gap:25px; }
+  .card { background:#fff; border:1px solid rgba(0,0,0,0.15); padding:20px 25px; border-radius:15px; box-shadow:0 6px 15px rgba(0,0,0,0.08); flex:0 1 400px; max-width:400px; height:auto; align-self:flex-start; transition: transform 0.18s; display:flex; flex-direction:column; gap:8px; }
+  .card:hover { transform: translateY(-4px); }
+  h1,h2 { margin:0 0 10px 0; color:#222; font-weight:600; }
+  form input, form textarea, form button { width:100%; margin-bottom:12px; padding:10px; border-radius:8px; border:1px solid #ccc; box-sizing:border-box; font-size:0.95em; background:#fff; }
+  form textarea { min-height:80px; resize:vertical; }
+  form input:focus, form textarea:focus { border-color:#4CAF50; outline:none; }
+  form button { background:#5f01ca; color:#fff; border:none; cursor:pointer; font-weight:700; transition: background 0.16s; padding:10px; border-radius:10px; }
+  form button:hover { background:#5a2edb; }
+  form label { display:block; font-size:0.9em; margin-bottom:6px; color:#444; }
+  form input[type="date"] { display:block; margin:0 auto 12px auto; text-align:center; max-width:250px; }
+  .list { margin-top:6px; width:100%; }
+  .item { display:flex; flex-direction:column; align-items:flex-start; padding:12px 10px; border-bottom:1px solid #eee; border-radius:8px; margin-bottom:8px; background:#fafafa; width:100%; }
+  .item div { margin-bottom:6px; word-break:break-word; }
+  .item .numeroPeca { font-weight:700; color:#222; }
+  .item .solicitante { color:#555; font-size:0.9em; }
+  .item .descricao { font-size:0.92em; color:#333; margin-top:2px; white-space:pre-wrap; }
+  .item .conclusao { font-size:0.88em; color:#555; }
+  .actions { display:flex; gap:10px; margin-top:8px; width:100%; align-items:center; }
+  .actions button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; font-weight:700; display:flex; align-items:center; justify-content:center; transition: background 0.14s, transform 0.09s; }
+  .actions button.concluir { background:#45a049; color:#fff; flex:1; height:40px; }
+  .actions button.concluir:hover { transform:translateY(-1px); opacity:0.98; }
+  .actions button.excluir { background:#e60000; color:#fff; flex:none; padding:8px 12px; }
+  .actions button.excluir:hover { transform:translateY(-1px); opacity:0.95; }
+  .actions button.excluir::before { content: "🗑️"; }
+  .actions.concluidas button.excluir { padding:6px 8px; font-size:0.9em; }
+  .card:nth-of-type(2) { border-top:4px solid #2196F3; }
+  .card:nth-of-type(3) { border-top:4px solid #4CAF50; }
+  @media(max-width:650px){ .wrap { flex-direction: column; align-items: center; width:100%; gap:20px; padding:18px; } .card { width:100%; max-width:420px; } .actions { flex-direction: row; gap:10px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <h1>Nova Requisição</h1>
+    <form id="reqForm">
+      <input type="text" id="numero" placeholder="Número da Nota" required>
+      <input type="text" id="peca" placeholder="Nome da Peça" required>
+      <input type="text" id="solicitante" placeholder="Solicitante" required>
+      <textarea id="descricao" placeholder="Descrição / Observações"></textarea>
+      <label>Data de Conclusão:</label>
+      <input type="date" id="conclusao" required>
+      <button type="submit">Salvar</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Pendentes</h2>
+    <div class="list" id="lista"></div>
+  </div>
+
+  <div class="card">
+    <h2>Concluídas</h2>
+    <div class="list" id="listaConcluidas"></div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById("reqForm");
+const lista = document.getElementById("lista");
+const listaConcluidas = document.getElementById("listaConcluidas");
+
+// Funções para o backend MySQL
+async function salvarBackend(data){
+  await fetch('http://localhost:3000/requisicoes', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(data)
+  });
+}
+
+async function buscarPendentes(){
+  const res = await fetch('http://localhost:3000/pendentes');
+  return await res.json();
+}
+
+async function buscarConcluidas(){
+  const res = await fetch('http://localhost:3000/concluidas');
+  return await res.json();
+}
+
+async function concluirBackend(id){
+  await fetch('http://localhost:3000/concluir/'+id, { method:'POST' });
+  carregarListas();
+}
+
+async function excluirBackend(id){
+  await fetch('http://localhost:3000/requisicoes/'+id, { method:'DELETE' });
+  carregarListas();
+}
+
+async function excluirConcluidaBackend(id){
+  await fetch('http://localhost:3000/concluidas/'+id, { method:'DELETE' });
+  carregarListas();
+}
+
+// Carregar listas
+async function carregarListas(){
+  const pendentes = await buscarPendentes();
+  lista.innerHTML = "";
+  const hoje = new Date().toISOString().split("T")[0];
+  for(let r of pendentes){
+    if(r.conclusao <= hoje){ await concluirBackend(r.id); continue; }
+    const dataFormatada = new Date(r.conclusao).toLocaleDateString("pt-BR");
+    const div = document.createElement("div");
+    div.className="item";
+    div.innerHTML=`<div class="numeroPeca">${r.numero} - ${r.peca}</div>
+      <div class="solicitante">${r.solicitante} | ${r.criado_em}</div>
+      <div class="descricao">${r.descricao || ""}</div>
+      <div class="conclusao">Concluir até: ${dataFormatada}</div>
+      <div class="actions">
+        <button class="concluir" onclick='concluirBackend(${r.id})'>Concluir</button>
+        <button class="excluir" onclick='excluirBackend(${r.id})'></button>
+      </div>`;
+    lista.appendChild(div);
+  }
+
+  const concluidas = await buscarConcluidas();
+  listaConcluidas.innerHTML = "";
+  for(let r of concluidas){
+    const dataFormatada = new Date(r.conclusao).toLocaleDateString("pt-BR");
+    const div = document.createElement("div");
+    div.className="item";
+    div.innerHTML=`<div class="numeroPeca">${r.numero} - ${r.peca}</div>
+      <div class="solicitante">${r.solicitante} | ${r.criado_em}</div>
+      <div class="descricao">${r.descricao || ""}</div>
+      <div class="conclusao">Concluído em: ${dataFormatada}</div>
+      <div class="actions concluidas">
+        <button class="excluir" onclick='excluirConcluidaBackend(${r.id})'></button>
+      </div>`;
+    listaConcluidas.appendChild(div);
+  }
+}
+
+// Evento do formulário
+form.addEventListener("submit", async e=>{
+  e.preventDefault();
+  const data={
+    numero:document.getElementById("numero").value,
+    peca:document.getElementById("peca").value,
+    solicitante:document.getElementById("solicitante").value,
+    descricao:document.getElementById("descricao").value,
+    conclusao:document.getElementById("conclusao").value,
+    criado_em:new Date().toLocaleString()
+  };
+  await salvarBackend(data);
+  alert("✅ Requisição cadastrada!");
+  form.reset();
+  carregarListas();
+});
+
+carregarListas();
+setInterval(carregarListas,60000);
+</script>
+</body>
+</html>
