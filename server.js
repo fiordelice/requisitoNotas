@@ -11,7 +11,7 @@ const PORT = 3000;
 
 // Configuração do banco
 const dbConfig = {
-  host: 'localhost',
+  host: '%',
   user: 'root',
   password: '0702', // sua senha
   database: 'requisicoes_db'
@@ -150,3 +150,4 @@ app.delete('/concluidas/:id', async (req, res) => {
 initDB().then(()=>{
   app.listen(PORT, ()=>console.log(`Servidor rodando em http://localhost:${PORT}`));
 });
+
